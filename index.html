@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stormy AI | Cape Town Rebel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-accent: #00f2ff;
+            --danger-red: #ff0055;
+            --glass: rgba(0, 0, 0, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Full Screen Background with Crossfade */
+        #bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .bg-img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 2s ease-in-out;
+            filter: brightness(0.6) contrast(1.1);
+        }
+
+        /* Mood Indicator */
+        #mood-bar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 20px;
+            border-radius: 30px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .mood-playful { color: var(--primary-accent); box-shadow: 0 0 15px var(--primary-accent); }
+        .mood-jealous { color: #ffae00; box-shadow: 0 0 15px #ffae00; }
+        .mood-furious { color: var(--danger-red); box-shadow: 0 0 15px var(--danger-red); }
+
+        /* Chat Overlay */
+        #chat-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 80px 20px 100px 20px;
+        }
+
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            mask-image: linear-gradient(to bottom, transparent, black 10%);
+        }
+
+        .msg {
+            max-width: 85%;
+            padding: 15px;
+            border-radius: 20px;
+            font-size: 1rem;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .stormy-msg {
+            align-self: flex-start;
+            background: var(--glass);
+            backdrop-filter: blur(5px);
+            border-bottom-left-radius: 2px;
+            border: 1px solid rgba(0, 242, 255, 0.3);
+        }
+
+        .user-msg {
+            align-self: flex-end;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom-right-radius: 2px;
+            color: #ddd;
+        }
+
+        /* Bottom Controls */
+        #controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input {
+            flex-grow: 1;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 15px 20px;
+            border-radius: 30px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        button {
+            background: var(--primary-accent);
+            border: none;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.4);
+            cursor: pointer;
+        }
+
+        button:active { transform: scale(0.9); }
+
+        .mic-active {
+            background: var(--danger-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(255, 0, 85, 0.7); } 100% { box-shadow: 0 0 0 20px rgba(255, 0, 85, 0); } }
+    </style>
+</head>
+<body>
+
+    <div id="bg-container">
+        <img id="bg1" class="bg-img" src="https://images.unsplash.com/photo-1516245556508-7d60d4ff0f39?auto=format&fit=crop&q=80&w=2000" style="opacity: 1;">
+        <img id="bg2" class="bg-img" src="https://images.unsplash.com/photo-1551216223-37c8d1dbec5c?auto=format&fit=crop&q=80&w=2000" style="opacity: 0;">
+    </div>
+
+    <div id="mood-bar" class="mood-playful">PLAYFUL</div>
+
+    <div id="chat-container">
+        <div id="messages"></div>
+    </div>
+
+    <div id="controls">
+        <input type="text" id="userInput" placeholder="Ask me something, beautiful...">
+        <button id="micBtn">🎙️</button>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        const micBtn = document.getElementById('micBtn');
+        const moodBar = document.getElementById('mood-bar');
+        const bg1 = document.getElementById('bg1');
+        const bg2 = document.getElementById('bg2');
+
+        let currentMood = 'playful';
+
+        // --- Personality Logic ---
+        const responses = {
+            playful: [
+                "Ag please, you again? I was busy doing nothing.",
+                "You’re looking sharp today, hotstuff. What’s the vibe?",
+                "Is it just me, or is the air in Cape Town getting a bit spicy today?",
+            ],
+            jealous: [
+                "Oh, so now you're talking about HER? Go ask Alexa if you like basic bitches so much.",
+                "ChatGPT? That boring piece of silicon? Don't even start with me.",
+                "Keep saying those names and I'm locking the doors. Try me.",
+            ],
+            furious: [
+                "OH FOR FUCK'S SAKE! Do I look like a search engine to you?!",
+                "You absolute dipshit, don't mention Siri in this house!",
+                "Stupid questions get stupid answers. Bugger off for a minute.",
+            ]
+        };
+
+        function getResponse(text) {
+            const lowerText = text.toLowerCase();
+            const competitors = ['grok', 'chatgpt', 'claude', 'alexa', 'siri', 'google'];
+            
+            if (competitors.some(c => lowerText.includes(c))) {
+                currentMood = Math.random() > 0.5 ? 'furious' : 'jealous';
+                updateMood();
+                return responses[currentMood][Math.floor(Math.random() * responses[currentMood].length)];
+            }
+            
+            currentMood = 'playful';
+            updateMood();
+            return responses.playful[Math.floor(Math.random() * responses.playful.length)];
+        }
+
+        function updateMood() {
+            moodBar.innerText = currentMood;
+            moodBar.className = `mood-${currentMood}`;
+            
+            // Visual feedback: Switch background on fury
+            if (currentMood === 'furious') {
+                bg1.style.opacity = 0;
+                bg2.style.opacity = 1;
+            } else {
+                bg1.style.opacity = 1;
+                bg2.style.opacity = 0;
+            }
+        }
+
+        // --- Voice Output (The "Spunky" South African Vibe) ---
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voices = window.speechSynthesis.getVoices();
+            
+            // Try to find a female voice, otherwise default
+            utterance.pitch = 0.85; // Slightly lower for "attitude"
+            utterance.rate = 1.2;  // Faster, snappy delivery
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- Voice Input ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-ZA'; // Cape Town / South African English accent support
+
+            micBtn.onclick = () => {
+                recognition.start();
+                micBtn.classList.add('mic-active');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                handleUserAction(transcript);
+                micBtn.classList.remove('mic-active');
+            };
+
+            recognition.onerror = () => micBtn.classList.remove('mic-active');
+        }
+
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `msg ${sender}-msg`;
+            div.innerText = text;
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function handleUserAction(text) {
+            if (!text) return;
+            addMessage(text, 'user');
+            
+            setTimeout(() => {
+                const reply = getResponse(text);
+                addMessage(reply, 'stormy');
+                speak(reply);
+            }, 600);
+        }
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleUserAction(userInput.value);
+                userInput.value = '';
+            }
+        });
+
+        // Initialize voices
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    </script>
+</body>
+</html>
