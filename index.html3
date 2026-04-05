@@ -142,7 +142,7 @@
             // DEFAULT
             else {
                 setMood('playful');
-                const basic = ["Ag ja? Tell me more.", "You're lucky you're handsome.", "I'm listening... mostly."];
+                const basic = ["Ag, ja? Tell me more.", "You're lucky you're handsome.", "I'm listening... mostly."];
                 reply = basic[Math.floor(Math.random() * basic.length)];
             }
 
