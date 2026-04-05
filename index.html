@@ -108,9 +108,9 @@
                 window.open(`https://www.google.com/search?q=weather+in+Cape+Town`);
             }
             // 2. REAL BOK RADIO
-            else if (raw.includes("bok radio") || raw.includes("98.9")) {
-                reply = "Tuning into Bok Radio 98.9. Finally, some decent music.";
-                window.open('https://bokradio.co.za/streaming', '_blank');
+            else if (raw.includes("bok radio") || raw.includes("fm 98.9")) {
+                reply = "Tuning into Bok Radio fm 98.9. Finally, some decent music.";
+                window.open('https://www.bokradio.co.za/?proradio-popup=1', '_blank');
             }
             // 3. REAL CALLING
             else if (raw.includes("call")) {
