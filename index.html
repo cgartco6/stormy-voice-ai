@@ -1,0 +1,68 @@
+// --- The "Real" Intent Engine ---
+// This replaces the old getResponse logic to handle actual hardware commands
+
+function handleUserAction(text) {
+    if (!text) return;
+    addMessage(text, 'user');
+    
+    const input = text.toLowerCase();
+    let reply = "";
+
+    // 1. REAL WEATHER
+    if (input.includes("weather")) {
+        reply = "Checking the sky for you... don't blame me if it's raining in Cape Town again.";
+        window.open(`https://www.google.com/search?q=weather+cape+town`, '_blank');
+    }
+
+    // 2. REAL PHONE CALLS
+    else if (input.includes("call")) {
+        const phoneMatch = text.match(/\d+/);
+        if (phoneMatch) {
+            reply = "Fine, I'm dialing. Don't stay on too long, I'll get bored.";
+            window.location.href = `tel:${phoneMatch[0]}`;
+        } else {
+            reply = "You want me to call who? Give me a number, dipshit.";
+        }
+    }
+
+    // 3. REAL NAVIGATION / ROUTES
+    else if (input.includes("navigate to") || input.includes("directions to")) {
+        const destination = text.replace(/.*(navigate to|directions to)/i, "").trim();
+        reply = `Setting course for ${destination}. Try not to crash, hotstuff.`;
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`, '_blank');
+    }
+
+    // 4. REAL BOK RADIO 98.9
+    else if (input.includes("bok radio") || input.includes("98.9")) {
+        reply = "Tuning into Bok Radio. At least your taste in music isn't as bad as your questions.";
+        // Opening the official stream
+        window.open('https://bokradio.co.za/streaming', '_blank');
+    }
+
+    // 5. REAL MUSIC ON PHONE
+    else if (input.includes("play music") || input.includes("my music")) {
+        reply = "Opening your music player. Make it something loud.";
+        window.location.href = "intent://music/#Intent;action=android.intent.action.MUSIC_PLAYER;end";
+    }
+
+    // 6. REAL NOTES
+    else if (input.includes("note") || input.includes("write down")) {
+        const note = text.replace(/.*(note|write down)/i, "").trim();
+        reply = "I've jotted it down. Try to remember it yourself next time.";
+        window.location.href = `intent://notes/#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=${encodeURIComponent(note)};end`;
+    }
+
+    // 7. REAL INTERNET SEARCH
+    else if (input.includes("search") || input.includes("who is") || input.includes("what is")) {
+        reply = "Searching the web. You're lucky I'm so fast.";
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    // 8. PERSONALITY / JEALOUSY (Default)
+    else {
+        reply = getResponse(text); // Uses the previous sarcasm/jealousy logic
+    }
+
+    addMessage(reply, 'stormy');
+    speak(reply);
+}
