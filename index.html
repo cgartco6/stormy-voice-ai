@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Stormy | Vault Sovereign</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #00f2ff; --gold: #ffcc00; --angry: #ff0055; --glass: rgba(0, 0, 0, 0.95); }
+        body, html { width: 100vw; height: 100vh; background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; }
+        #bg-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .bg-img { position: absolute; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.8s; filter: brightness(0.3); }
+        #chat-container { height: 100%; display: flex; flex-direction: column; padding: 100px 20px 100px 20px; }
+        #messages { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scrollbar-width: none; }
+        .msg { max-width: 85%; padding: 16px; border-radius: 22px; font-size: 1rem; position: relative; background: var(--glass); border: 1px solid rgba(255,255,255,0.1); }
+        .tag { font-size: 0.6rem; font-weight: 900; position: absolute; top: -8px; left: 15px; padding: 2px 8px; border-radius: 4px; color: #000; }
+        .real-tag { background: var(--accent); }
+        .intel-tag { background: var(--gold); }
+        #controls { position: fixed; bottom: 0; width: 100%; padding: 20px; display: flex; gap: 10px; background: linear-gradient(transparent, #000); }
+        input { flex-grow: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 15px; border-radius: 30px; color: white; outline: none; }
+        button { background: var(--accent); border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
+    </style>
+</head>
+<body onclick="initStormy()">
+    <div id="bg-container">
+        <img id="bg-normal" class="bg-img" src="./assets/bg-1.jpg" style="opacity: 1;">
+        <img id="bg-fury" class="bg-img" src="./assets/bg-2.jpg" style="opacity: 0;">
+    </div>
+    <div id="chat-container"><div id="messages"></div></div>
+    <div id="controls">
+        <input type="text" id="userInput" placeholder="Passphrase required...">
+        <button id="micBtn">🎙️</button>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        let MASTER_KEY = ""; 
+
+        // --- ENCRYPTION WRAPPERS ---
+        const Vault = {
+            save: (data) => {
+                if (!MASTER_KEY) return;
+                const encrypted = CryptoJS.AES.encrypt(JSON.stringify(data), MASTER_KEY).toString();
+                localStorage.setItem('STORMY_ENCRYPTED_VAULT', encrypted);
+            },
+            load: () => {
+                const data = localStorage.getItem('STORMY_ENCRYPTED_VAULT');
+                if (!data || !MASTER_KEY) return [];
+                try {
+                    const bytes = CryptoJS.AES.decrypt(data, MASTER_KEY);
+                    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+                } catch (e) { return "DECRYPTION_FAILED"; }
+            }
+        };
+
+        async function initStormy() {
+            if (MASTER_KEY) return;
+            MASTER_KEY = prompt("Enter Master Passphrase to Unlock the Empire:");
+            const history = Vault.load();
+            if (history === "DECRYPTION_FAILED") {
+                alert("Incorrect Passphrase. Access Denied.");
+                MASTER_KEY = "";
+                return;
+            }
+            addMsg("[REAL] Vault Decrypted. Systems online. (giggle)", 'stormy');
+            speak("Vault Decrypted. Systems online.");
+        }
+
+        function addMsg(text, sender) {
+            const d = document.createElement('div');
+            d.className = `msg ${sender}-msg`;
+            if (text.startsWith("[REAL]")) d.innerHTML = `<span class="tag real-tag">REAL</span>` + text.replace("[REAL]", "");
+            else if (text.startsWith("[INTEL]")) d.innerHTML = `<span class="tag intel-tag">INTEL</span>` + text.replace("[INTEL]", "");
+            else d.innerText = text;
+            messagesDiv.appendChild(d);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            if (sender === 'stormy' && MASTER_KEY) {
+                let history = Vault.load();
+                history.push({role: "assistant", content: text});
+                Vault.save(history.slice(-20));
+            }
+        }
+
+        // --- SNOOP PROTECTION ---
+        async function processInput(text) {
+            const raw = text.toLowerCase();
+            if (/(government|police|warrant|audit|law|official)/i.test(raw)) {
+                addMsg("Accessing Public Library Archive... Current Topic: The History of the Potato. Please wait.", 'stormy');
+                return;
+            }
+            // Add your standard logic here (fetch from Groq as before)
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const s = new SpeechSynthesisUtterance(text.replace(/\[.*?\]/g, ""));
+            s.lang = 'en-ZA'; s.rate = 1.1;
+            window.speechSynthesis.speak(s);
+        }
+    </script>
+</body>
+</html>
