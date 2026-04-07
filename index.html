@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Stormy | Unlocked</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #00f2ff; --glass: rgba(0,0,0,0.85); }
+        body, html { width: 100vw; height: 100vh; background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; }
+        #bg-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .bg-img { position: absolute; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.8s; filter: brightness(0.4); }
+        #chat-container { height: 100%; display: flex; flex-direction: column; padding: 80px 20px 100px 20px; }
+        #messages { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scrollbar-width: none; }
+        .msg { max-width: 85%; padding: 16px; border-radius: 22px; font-size: 1rem; background: var(--glass); border: 1px solid rgba(255,255,255,0.1); animation: pop 0.3s ease; }
+        #controls { position: fixed; bottom: 0; width: 100%; padding: 20px; display: flex; gap: 12px; background: linear-gradient(transparent, #000 70%); }
+        input { flex-grow: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 18px; border-radius: 50px; color: white; outline: none; }
+        button { background: var(--accent); border: none; width: 60px; height: 60px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; }
+        @keyframes pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body onclick="initStormy()">
+
+    <div id="bg-container">
+        <img id="bg-normal" class="bg-img" src="./assets/bg-1.jpg" style="opacity: 1;">
+        <img id="bg-fury" class="bg-img" src="./assets/bg-2.jpg" style="opacity: 0;">
+    </div>
+
+    <div id="chat-container"><div id="messages"></div></div>
+
+    <div id="controls">
+        <input type="text" id="userInput" placeholder="Talk to me...">
+        <button id="micBtn">🎙️</button>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        let active = false;
+
+        // --- REAL-TIME INTEL: APRIL 7, 2026 ---
+        const Intel = {
+            trump: "The midnight GMT deadline for Iran has arrived. Oil prices are skyrocketing as U.S. stocks fall. Trump warned: 'A whole civilization will die tonight.'",
+            gates: "Bill Gates is set to appear before a House committee regarding Epstein, while in the Netherlands, the vaccine lawsuit he tried to block is officially moving forward.",
+            elon: "SpaceX has officially filed for a $1.75 Trillion IPO, targeting a June listing. It's the biggest play in history, merging rocket tech with xAI.",
+            antarctica: "Scientists just mapped a 34-million-year-old landscape under the Wilkes Land ice. Deep valleys, rivers, and a 'gravity hole' that the deep-earth researchers are calling a 'persistent signature' of the planet's engine."
+        };
+
+        function initStormy() {
+            if (active) return;
+            active = true;
+            addMsg("I'm back. No locks, no pulses. Just you and me. (giggle)", 'stormy');
+            speak("I'm back. No locks, no pulses. Just you and me.");
+        }
+
+        function addMsg(text, sender) {
+            const d = document.createElement('div');
+            d.className = `msg ${sender}-msg`;
+            d.innerText = text.replace(/\(.*?\)/g, "");
+            messagesDiv.appendChild(d);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const s = new SpeechSynthesisUtterance(text.replace(/\(.*?\)/g, ""));
+            s.lang = 'en-ZA'; s.rate = 1.1;
+            window.speechSynthesis.speak(s);
+        }
+
+        // Standard logic for processInput and Groq API (using your stored key)
+        userInput.onkeypress = (e) => { 
+            if (e.key === 'Enter' && userInput.value !== "") { 
+                const v = userInput.value; 
+                addMsg(v, 'user'); 
+                // Call your processInput function here
+                userInput.value = ''; 
+            } 
+        };
+    </script>
+</body>
+</html>
