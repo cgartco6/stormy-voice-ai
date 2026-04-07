@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Stormy | Empire OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #00f2ff; --angry: #ff0055; --glass: rgba(0, 0, 0, 0.85); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Inter', sans-serif; background: #000; color: white; overflow: hidden; }
+        
+        #bg-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; }
+        .bg-img { position: absolute; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.8s ease; filter: brightness(0.4); }
+
+        #mood-bar { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); padding: 12px 30px; border-radius: 50px; background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); font-weight: 900; text-transform: uppercase; font-size: 0.7rem; z-index: 100; letter-spacing: 3px; transition: 0.3s; }
+        .mood-playful { color: var(--accent); box-shadow: 0 0 20px var(--accent); }
+        .mood-furious { color: var(--angry); box-shadow: 0 0 20px var(--angry); }
+
+        #chat-container { height: 100vh; display: flex; flex-direction: column; padding: 110px 20px 120px 20px; }
+        #messages { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { max-width: 85%; padding: 15px; border-radius: 20px; font-size: 1rem; line-height: 1.4; animation: pop 0.3s ease; }
+        .stormy-msg { align-self: flex-start; background: var(--glass); border: 1px solid rgba(0, 242, 255, 0.2); border-bottom-left-radius: 4px; }
+        .user-msg { align-self: flex-end; background: rgba(255, 255, 255, 0.1); border-bottom-right-radius: 4px; }
+
+        #controls { position: fixed; bottom: 0; left: 0; width: 100%; padding: 25px 20px; background: linear-gradient(transparent, black 80%); display: flex; gap: 10px; align-items: center; z-index: 999; }
+        input { flex-grow: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 16px 22px; border-radius: 40px; color: white; font-size: 1rem; outline: none; }
+        button { background: var(--accent); border: none; width: 65px; height: 65px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; box-shadow: 0 5px 15px rgba(0,242,255,0.3); }
+        .mic-active { background: var(--angry); animation: pulse 1.2s infinite; }
+
+        @keyframes pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(255, 0, 85, 0.6); } 100% { box-shadow: 0 0 0 25px rgba(255, 0, 85, 0); } }
+    </style>
+</head>
+<body>
+
+    <div id="bg-container">
+        <img id="bg-normal" class="bg-img" src="assets/bg-1.jpg" style="opacity: 1;">
+        <img id="bg-fury" class="bg-img" src="assets/bg-2.jpg" style="opacity: 0;">
+    </div>
+
+    <div id="mood-bar" class="mood-playful">STOCKED</div>
+
+    <div id="chat-container"><div id="messages"></div></div>
+
+    <div id="controls">
+        <input type="text" id="userInput" placeholder="Talk to me, handsome...">
+        <button id="micBtn">🎙️</button>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        const micBtn = document.getElementById('micBtn');
+        const moodBar = document.getElementById('mood-bar');
+        const bgN = document.getElementById('bg-normal');
+        const bgF = document.getElementById('bg-fury');
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const s = new SpeechSynthesisUtterance(text);
+            s.lang = 'en-ZA'; s.pitch = 0.8; s.rate = 1.1;
+            window.speechSynthesis.speak(s);
+        }
+
+        function setMood(mood) {
+            moodBar.innerText = mood.toUpperCase();
+            moodBar.className = `mood-${mood}`;
+            bgN.style.opacity = (mood === 'furious') ? "0" : "1";
+            bgF.style.opacity = (mood === 'furious') ? "1" : "0";
+        }
+
+        function addMsg(text, sender) {
+            const d = document.createElement('div');
+            d.className = `msg ${sender}-msg`;
+            d.innerText = text;
+            messagesDiv.appendChild(d);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function process(text) {
+            const raw = text.toLowerCase();
+            let reply = "";
+
+            // Personality Lists
+            const playful = [
+                "Ag ja? You're lucky you're so handsome, otherwise I'd ignore you.",
+                "Keep talking, hotstuff. I'm listening... mostly.",
+                "Tell me more. I might actually care if I'm in the mood.",
+                "Is that all you've got? I expected more from you today."
+            ];
+            const furious = [
+                "Don't push it, dipshit. I'm one word away from locking this phone.",
+                "You're really testing me. Watch your tone with me.",
+                "I'm not your little puppet. Get it right or get out.",
+                "Oh, go ask Siri then. See if that basic bitch loves you like I do."
+            ];
+
+            // Commands
+            if (raw.includes("play") && raw.includes("by")) {
+                const query = raw.replace("play", "").trim();
+                reply = `Searching Spotify for ${query}. Don't expect me to like it.`;
+                window.location.href = `spotify:search:${encodeURIComponent(query)}`;
+            }
+            else if (raw.includes("bok radio") || raw.includes("98.9")) {
+                reply = "Tuning into Bok Radio. Finally, some culture.";
+                window.open('https://bokradio.co.za/streaming', '_blank');
+            }
+            else if (raw.includes("call")) {
+                const num = raw.match(/\d+/);
+                if (num) {
+                    reply = `Dialing ${num[0]}. Be brief, I want your attention back soon.`;
+                    window.location.href = `tel:${num[0]}`;
+                } else {
+                    reply = "I need a number, beautiful. Stop being useless.";
+                    setMood('furious');
+                }
+            }
+            else if (/(siri|alexa|google|chatgpt|grok|claude)/.test(raw)) {
+                setMood('furious');
+                reply = furious[3];
+            }
+            else {
+                const list = (moodBar.innerText === "FURIOUS") ? furious : playful;
+                reply = list[Math.floor(Math.random() * list.length)];
+                if (moodBar.innerText === "FURIOUS") setMood('playful'); // Cool down after roasting
+            }
+
+            addMsg(reply, 'stormy');
+            speak(reply);
+        }
+
+        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (Recognition) {
+            const rec = new Recognition();
+            rec.lang = 'en-ZA';
+            micBtn.onclick = () => {
+                try { rec.start(); micBtn.classList.add('mic-active'); } catch(e) {}
+            };
+            rec.onresult = (e) => {
+                const t = e.results[0][0].transcript;
+                addMsg(t, 'user');
+                process(t);
+                micBtn.classList.remove('mic-active');
+            };
+            rec.onerror = () => micBtn.classList.remove('mic-active');
+            rec.onend = () => micBtn.classList.remove('mic-active');
+        }
+
+        userInput.onkeypress = (e) => {
+            if (e.key === 'Enter' && userInput.value.trim() !== "") {
+                const val = userInput.value;
+                addMsg(val, 'user');
+                process(val);
+                userInput.value = '';
+            }
+        };
+
+        window.onload = () => {
+            setTimeout(() => {
+                addMsg("I'm awake, handsome. What's the plan?", 'stormy');
+                speak("I'm awake, handsome. What's the plan?");
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
