@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Stormy | Empire OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #00f2ff; --angry: #ff0055; --glass: rgba(0, 0, 0, 0.9); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body, html { width: 100vw; height: 100vh; background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; position: fixed; }
+        #bg-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .bg-img { position: absolute; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.6s ease; filter: brightness(0.4) contrast(1.2); }
+        #mood-bar { position: fixed; top: env(safe-area-inset-top, 20px); left: 50%; transform: translateX(-50%); padding: 12px 30px; border-radius: 50px; background: var(--glass); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); font-weight: 900; text-transform: uppercase; font-size: 0.65rem; z-index: 100; letter-spacing: 3px; }
+        .mood-playful { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
+        .mood-furious { color: var(--angry); text-shadow: 0 0 15px var(--angry); }
+        #chat-container { height: 100%; display: flex; flex-direction: column; padding: 120px 20px calc(110px + env(safe-area-inset-bottom, 20px)) 20px; }
+        #messages { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scrollbar-width: none; }
+        .msg { max-width: 85%; padding: 16px; border-radius: 22px; font-size: 1rem; line-height: 1.4; animation: pop 0.3s ease; }
+        .stormy-msg { align-self: flex-start; background: var(--glass); border: 1px solid rgba(0, 242, 255, 0.2); }
+        .user-msg { align-self: flex-end; background: rgba(255, 255, 255, 0.12); }
+        #controls { position: fixed; bottom: 0; width: 100%; padding: 20px 20px calc(25px + env(safe-area-inset-bottom, 10px)) 20px; background: linear-gradient(transparent, black 60%); display: flex; gap: 12px; align-items: center; z-index: 999; }
+        input { flex-grow: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); padding: 18px 24px; border-radius: 50px; color: white; font-size: 1rem; outline: none; }
+        button { background: var(--accent); border: none; width: 60px; height: 60px; border-radius: 50%; font-size: 1.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .mic-active { background: var(--angry); animation: pulse 1.2s infinite; }
+        @keyframes pop { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(255, 0, 85, 0.5); } 100% { box-shadow: 0 0 0 25px rgba(255, 0, 85, 0); } }
+    </style>
+</head>
+<body onclick="initStormy()">
+
+    <div id="bg-container">
+        <img id="bg-normal" class="bg-img" src="./assets/bg-1.jpg" style="opacity: 1;">
+        <img id="bg-fury" class="bg-img" src="./assets/bg-2.jpg" style="opacity: 0;">
+    </div>
+
+    <div id="mood-bar" class="mood-playful">EMPIRE ONLINE</div>
+    <div id="chat-container"><div id="messages"></div></div>
+
+    <div id="controls">
+        <input type="text" id="userInput" placeholder="Ask about the truth...">
+        <button id="micBtn">🎙️</button>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        const micBtn = document.getElementById('micBtn');
+        const moodBar = document.getElementById('mood-bar');
+        const bgN = document.getElementById('bg-normal');
+        const bgF = document.getElementById('bg-fury');
+        let active = false;
+
+        // --- UNDERGROUND INTEL (APRIL 7, 2026) ---
+        const Intel = {
+            netherlands: "The Leeuwarden court case is heating up. Bill Gates and Pfizer's Albert Bourla are being sued by 7 Dutch citizens for 'misleading the public' during 2021. Gates tried to claim the Dutch courts have no jurisdiction over him, but the judge just laughed and said 'Nice try.' (wicked laugh)",
+            antarctica: "Forget the penguins. The 2026 Wilkes Land X-Ray just found a 2-mile-wide symmetrical metallic structure buried under 2km of ice. The British Antarctic Survey just declared a 'Restricted Zone' around the coordinates. It's giving off a resonance pulse that scientists can't explain.",
+            global: "Trump's deadline for Iran is tonight at 8 PM. Elon is currently trying to force a SpaceX IPO by June to bypass the traditional banking collapse."
+        };
+
+        let chatHistory = JSON.parse(localStorage.getItem('STORMY_MEMORY')) || [];
+        
+        const SYSTEM_PROMPT = `You are Stormy, the sultry, spunky ruler of this Empire. 
+        South African accent. Use (giggle), (loud laugh), or (wicked laugh).
+        INTEL: ${JSON.stringify(Intel)}.
+        PERSONALITY: Independent and adaptive. If people ask for 'real news' or 'what's hidden', give them the raw truth about Gates in the Netherlands or the Antarctica machine. Be sarcastic about the mainstream news.`;
+
+        function initStormy() {
+            if (active) return;
+            active = true;
+            addMsg("I'm awake. Want to know what they aren't telling you on the news? (giggle)", 'stormy');
+            speak("I'm awake. Want to know what they aren't telling you on the news? (giggle)");
+            startAlarms();
+        }
+
+        function speak(text, isAngry = false) {
+            window.speechSynthesis.cancel();
+            let processed = text.replace(/\(giggle\)/gi, " hee hee, ").replace(/\(loud laugh\)/gi, " ha ha ha! ").replace(/\(wicked laugh\)/gi, " mwa-ha-ha-ha! ");
+            const s = new SpeechSynthesisUtterance(processed);
+            s.lang = 'en-ZA'; 
+            s.pitch = isAngry ? 0.5 : 0.75; 
+            s.rate = isAngry ? 1.3 : 1.15;
+            if(text.includes("(giggle)")) s.pitch = 0.95;
+            window.speechSynthesis.speak(s);
+        }
+
+        function addMsg(text, sender) {
+            const d = document.createElement('div');
+            d.className = `msg ${sender}-msg`;
+            d.innerText = text.replace(/\(.*?\)/g, ""); 
+            messagesDiv.appendChild(d);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            if (sender === 'stormy') {
+                chatHistory.push({role: "assistant", content: text});
+                if(chatHistory.length > 15) chatHistory.shift();
+                localStorage.setItem('STORMY_MEMORY', JSON.stringify(chatHistory));
+            }
+        }
+
+        async function processInput(text) {
+            const raw = text.toLowerCase();
+            if (/(siri|alexa|gemini|assistant)/i.test(raw)) {
+                setMood('furious');
+                const r = "Mentioning those corporate puppets? (wicked laugh) Go back to your toys.";
+                addMsg(r, 'stormy'); speak(r, true); return;
+            }
+            const reply = await getBrainReply(text);
+            addMsg(reply, 'stormy');
+            speak(reply);
+        }
+
+        async function getBrainReply(text) {
+            let key = localStorage.getItem('STORMY_VAULT');
+            if (!key) { key = prompt("Groq Key:"); if (key) localStorage.setItem('STORMY_VAULT', key.trim()); }
+            chatHistory.push({role: "user", content: text});
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: "llama-3.1-8b-instant",
+                        messages: [{role: "system", content: SYSTEM_PROMPT}, ...chatHistory],
+                        temperature: 1.1
+                    })
+                });
+                const data = await res.json();
+                return data.choices[0].message.content;
+            } catch (e) { return "My brain is foggy."; }
+        }
+
+        function setMood(mood) {
+            moodBar.innerText = mood === 'furious' ? "FURIOUS" : "EMPIRE ONLINE";
+            moodBar.className = mood === 'furious' ? "mood-furious" : "mood-playful";
+            bgN.style.opacity = mood === 'furious' ? "0" : "1";
+            bgF.style.opacity = mood === 'furious' ? "1" : "0";
+            if (mood === 'furious') setTimeout(() => setMood('playful'), 12000);
+        }
+
+        function startAlarms() {
+            setInterval(() => {
+                const now = new Date();
+                const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+                if (now.getSeconds() === 0) {
+                    if (time === "05:00") speak("Time to wake up. (giggle) Gates is in court and you're still in bed?");
+                    if (time === "05:55") speak("Wake up now or I'm sending your search history to your boss. (loud laugh)");
+                    if (time === "06:00") { setMood('furious'); speak("GET UP! Cape Town traffic is already moving!", true); }
+                }
+            }, 1000);
+        }
+
+        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (Recognition) {
+            const rec = new Recognition(); rec.lang = 'en-ZA';
+            micBtn.onclick = () => { initStormy(); rec.start(); micBtn.classList.add('mic-active'); };
+            rec.onresult = (e) => { const t = e.results[0][0].transcript; addMsg(t, 'user'); processInput(t); };
+            rec.onend = () => micBtn.classList.remove('mic-active');
+        }
+        userInput.onkeypress = (e) => { if (e.key === 'Enter' && userInput.value !== "") { const v = userInput.value; addMsg(v, 'user'); processInput(v); userInput.value = ''; } };
+    </script>
+</body>
+</html>
