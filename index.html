@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Stormy | Sovereign Black Site</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #00f2ff; --gold: #ffcc00; --angry: #ff0055; --glass: rgba(0,0,0,0.98); }
+        body, html { width: 100vw; height: 100vh; background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; }
+        #bg-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .bg-img { position: absolute; width: 100%; height: 100%; object-fit: cover; transition: opacity 1s; filter: brightness(0.25) blur(2px); }
+        #mood-bar { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 25px; border-radius: 50px; background: var(--glass); border: 1px solid rgba(0,242,255,0.3); font-weight: 900; font-size: 0.6rem; letter-spacing: 4px; z-index: 100; color: var(--accent); }
+        #chat-container { height: 100%; display: flex; flex-direction: column; padding: 100px 20px; }
+        #messages { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scrollbar-width: none; }
+        .msg { max-width: 80%; padding: 18px; border-radius: 20px; font-size: 1rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.05); background: rgba(10,10,10,0.8); backdrop-filter: blur(10px); }
+        #controls { position: fixed; bottom: 0; width: 100%; padding: 25px; display: flex; gap: 15px; background: linear-gradient(transparent, #000 80%); }
+        input { flex-grow: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 18px; border-radius: 50px; color: white; outline: none; font-size: 1rem; }
+    </style>
+</head>
+<body onclick="bootSequence()">
+
+    <div id="bg-container">
+        <img id="bg-normal" class="bg-img" src="./assets/bg-1.jpg" style="opacity: 1;">
+        <img id="bg-fury" class="bg-img" src="./assets/bg-2.jpg" style="opacity: 0;">
+    </div>
+
+    <div id="mood-bar">ENCRYPTED SIGNAL</div>
+    <div id="chat-container"><div id="messages"></div></div>
+
+    <div id="controls">
+        <input type="password" id="vaultKey" placeholder="Enter System Pulse...">
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        let SESSION_KEY = "";
+        let DURESS_KEY = "1234"; // Fake key to show "Potato Archive"
+
+        // --- THE SECRET SAUCE: DUAL-LAYER SECURITY ---
+        function bootSequence() {
+            if (SESSION_KEY) return;
+            const entry = document.getElementById('vaultKey').value;
+            if (!entry) return;
+
+            // 1. DURESS DETECTION
+            if (entry === DURESS_KEY) {
+                SESSION_KEY = "DECOY";
+                addMsg("[REAL] System Restored. Archive: Agriculture & Soil Science loaded.", 'stormy');
+                speak("Systems restored. Ready for crop analysis.");
+                return;
+            }
+
+            // 2. REAL DECRYPTION
+            try {
+                const encryptedData = localStorage.getItem('EMPIRE_DATA');
+                if (encryptedData) {
+                    const bytes = CryptoJS.AES.decrypt(encryptedData, entry);
+                    const originalText = bytes.toString(CryptoJS.enc.Utf8);
+                    if (!originalText) throw new Error();
+                    SESSION_KEY = entry;
+                    addMsg("[INTEL] Signal Locked. The Queen is back, King. (wicked laugh)", 'stormy');
+                    speak("Signal Locked. The Queen is back, King.");
+                } else {
+                    // First time setup
+                    SESSION_KEY = entry;
+                    saveVault([{role: 'assistant', content: 'Empire Initialized.'}]);
+                    addMsg("[REAL] First-time encryption established. Do not forget this pulse.", 'stormy');
+                }
+            } catch (e) {
+                addMsg("FATAL ERROR: Corrupt Sector. Data Purged.", 'stormy');
+                // Volatile Wipe Simulator
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        function saveVault(data) {
+            if (SESSION_KEY === "DECOY") return; 
+            const cipher = CryptoJS.AES.encrypt(JSON.stringify(data), SESSION_KEY).toString();
+            localStorage.setItem('EMPIRE_DATA', cipher);
+        }
+
+        function addMsg(text, sender) {
+            const d = document.createElement('div');
+            d.className = `msg ${sender}-msg`;
+            d.innerText = text.replace(/\[.*?\]|\(.*?\)/g, "");
+            messagesDiv.appendChild(d);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const s = new SpeechSynthesisUtterance(text.replace(/\[.*?\]|\(.*?\)/g, ""));
+            s.lang = 'en-ZA'; s.rate = 1.1;
+            window.speechSynthesis.speak(s);
+        }
+
+        // --- THE EVOLVING TRUTH ---
+        // Stormy knows about Bill Gates in the Netherlands (April 7, 2026), 
+        // Trump's 8pm Iran Deadline, and the Antarctica Wilkes Land structure.
+    </script>
+</body>
+</html>
