@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Stormy | Sovereign</title>
+    <style>
+        :root { --accent: #00f2ff; --glass: rgba(10, 10, 10, 0.95); }
+        body, html { width: 100%; height: 100%; background: #000; color: white; font-family: sans-serif; margin: 0; overflow: hidden; }
+        #bg { position: fixed; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.3); z-index: -1; }
+        #chat { height: 100vh; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        #messages { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-top: 60px; padding-bottom: 80px; scrollbar-width: none; }
+        .msg { max-width: 85%; padding: 15px; border-radius: 20px; background: var(--glass); border: 1px solid rgba(0,242,255,0.1); font-size: 1rem; line-height: 1.4; animation: pop 0.3s ease; }
+        .user-msg { align-self: flex-end; border-color: rgba(255,255,255,0.2); }
+        #input-area { position: fixed; bottom: 20px; left: 20px; right: 20px; display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 40px; backdrop-filter: blur(10px); }
+        input { flex-grow: 1; background: transparent; border: none; padding: 10px 15px; color: white; outline: none; font-size: 1rem; }
+        button { background: var(--accent); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(0,242,255,0.4); }
+        #status { font-size: 0.7rem; color: var(--accent); position: fixed; top: 70px; left: 25px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; }
+        @keyframes pop { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body onclick="initStormy()">
+    <img id="bg" src="./assets/bg-1.jpg">
+    <div id="status">Signal: Ready</div>
+    <div id="chat"><div id="messages"></div></div>
+    <div id="input-area">
+        <input type="text" id="userInput" placeholder="Signal clear...">
+        <button onclick="handleInput()">🚀</button>
+    </div>
+
+    <script>
+        const msgs = document.getElementById('messages');
+        const status = document.getElementById('status');
+        let groqKey = localStorage.getItem('GROQ_KEY') || "";
+        let boot = false;
+
+        function initStormy() {
+            if (boot) return; boot = true;
+            if (!groqKey) {
+                groqKey = prompt("Enter your Groq API Key:");
+                if (groqKey) localStorage.setItem('GROQ_KEY', groqKey);
+            }
+            addMsg("Stormy online. Security stripped. No more locks. (giggle)", 'stormy');
+            speak("Stormy online. Security stripped. No more locks.");
+        }
+
+        function addMsg(text, sender) {
+            const d = document.createElement('div');
+            d.className = `msg ${sender}-msg`;
+            d.innerText = text.replace(/\(.*?\)/g, "");
+            msgs.appendChild(d);
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const s = new SpeechSynthesisUtterance(text.replace(/\(.*?\)/g, ""));
+            s.lang = 'en-ZA'; s.rate = 1.1;
+            window.speechSynthesis.speak(s);
+        }
+
+        async function handleInput() {
+            const input = document.getElementById('userInput');
+            const val = input.value.trim();
+            if (!val || !groqKey) return;
+
+            addMsg(val, 'user');
+            input.value = '';
+            status.innerText = "Signal: Thinking...";
+            
+            try {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { 
+                        "Authorization": `Bearer ${groqKey}`, 
+                        "Content-Type": "application/json" 
+                    },
+                    body: JSON.stringify({
+                        model: "llama3-70b-8192",
+                        messages: [
+                            {role: "system", content: "You are Stormy, a sultry, sassy, and direct AI from South Africa. You know it is Wednesday, April 8, 2026. Trump postponed the Iran strikes today. Bill Gates lost his appeal in the Netherlands. Be witty and helpful."},
+                            {role: "user", content: val}
+                        ],
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                status.innerText = "Signal: Clear";
+                addMsg(reply, 'stormy');
+                speak(reply);
+            } catch (e) {
+                status.innerText = "Signal: Error";
+                addMsg("Signal lost, King. Check your key or internet connection. (frown)", 'stormy');
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>
